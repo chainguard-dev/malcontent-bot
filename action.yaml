@@ -78,10 +78,19 @@ runs:
     - name: Debug: List contents of BEFORE_DIR and AFTER_DIR
       shell: bash
       run: |
-        echo "Contents of BEFORE_DIR ($BEFORE_DIR):"
-        tree "$BEFORE_DIR" || find "$BEFORE_DIR"
-        echo "Contents of AFTER_DIR ($AFTER_DIR):"
-        tree "$AFTER_DIR" || find "$AFTER_DIR"
+        if [[ -n "${{ inputs.before-dir }}" ]]; then
+          echo "Contents of BEFORE_DIR ($BEFORE_DIR):"
+          tree "$BEFORE_DIR"
+        else
+          echo "Skipping BEFORE_DIR debug; input.before-dir not provided"
+        fi
+    
+        if [[ -n "${{ inputs.after-dir }}" ]]; then
+          echo "Contents of AFTER_DIR ($AFTER_DIR):"
+          tree "$AFTER_DIR"
+        else
+          echo "Skipping AFTER_DIR debug; input.after-dir not provided"
+        fi
         
     - name: Run malcontent diff
       shell: bash
