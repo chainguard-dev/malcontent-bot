@@ -136,7 +136,7 @@ runs:
 
     - name: Add malcontent/critical label to PR
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: actions/github-script@f9781998b6e6ec13e4c4ef2c5401508c328d419f # v7.0.1
+      uses: actions/github-script@v7
       with:
         script: |
           const label = 'malcontent/critical';
