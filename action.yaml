@@ -1,16 +1,18 @@
 name: "ScanMalware"
 description: "Runs malcontent diff between base commit and PR for malware scanning"
+
 inputs:
   malcontent-image:
     description: "Fully qualified Malcontent image"
     required: false
     default: "cgr.dev/chainguard/malcontent@sha256:fdfca44c401a5ca98af51292a821278644895bc1963f7a76a733d76647ff0ede"
   before-dir:
-    description: "Directory path for base commit files"
-    required: true
+    description: "Directory path for base commit files (optional)"
+    required: false
   after-dir:
-    description: "Directory path for PR commit files"
-    required: true
+    description: "Directory path for PR commit files (optional)"
+    required: false
+
 outputs:
   critical:
     description: "true if CRITICAL malware was found"
@@ -18,40 +20,45 @@ outputs:
     description: "true if HIGH malware was found"
   diff-json:
     description: "Path to the malcontent diff JSON report"
+
 runs:
   using: "composite"
   steps:
-    - name: Setup environment
+    - name: Setup working environment
+      shell: bash
+      run: mkdir -p scans
+
+    - name: Determine before/after dirs
       shell: bash
       run: |
-        mkdir -p scans before after
-        # Use input env vars or default to workspace folders
-        if [[ -z "${BEFORE_DIR}" ]]; then
-          export BEFORE_DIR="${{ github.workspace }}/before"
+        if [[ -n "${{ inputs.before-dir }}" && -n "${{ inputs.after-dir }}" ]]; then
+          echo "Using provided directories for testing"
+          echo "BEFORE_DIR=${{ inputs.before-dir }}" >> $GITHUB_ENV
+          echo "AFTER_DIR=${{ inputs.after-dir }}" >> $GITHUB_ENV
+        else
+          echo "Using git diff between base and HEAD"
+          BEFORE_DIR="${{ github.workspace }}/before"
+          AFTER_DIR="${{ github.workspace }}/after"
+          mkdir -p "$BEFORE_DIR" "$AFTER_DIR"
+          echo "BEFORE_DIR=$BEFORE_DIR" >> $GITHUB_ENV
+          echo "AFTER_DIR=$AFTER_DIR" >> $GITHUB_ENV
         fi
-        if [[ -z "${AFTER_DIR}" ]]; then
-          export AFTER_DIR="${{ github.workspace }}/after"
-        fi
-        export OUTFILE="${{ github.workspace }}/scans/malcontent-diff.json"
+        echo "OUTFILE=${{ github.workspace }}/scans/malcontent-diff.json" >> $GITHUB_ENV
 
-        echo "SCANS_DIR=${{ github.workspace }}/scans" >> $GITHUB_ENV
-        echo "BEFORE_DIR=$BEFORE_DIR" >> $GITHUB_ENV
-        echo "AFTER_DIR=$AFTER_DIR" >> $GITHUB_ENV
-        echo "OUTFILE=$OUTFILE" >> $GITHUB_ENV
-
-    - name: Checkout full history
-      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    - name: Checkout full repo history
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.1
       with:
-        ref: ${{ github.ref }}
         fetch-depth: 0
 
     - name: Extract base commit files
+      if: ${{ !inputs.before-dir && !inputs.after-dir }}
       shell: bash
       run: |
         BASE_SHA=$(git merge-base HEAD origin/main)
         git --work-tree="$BEFORE_DIR" checkout "$BASE_SHA" -- .
 
     - name: Extract PR commit files
+      if: ${{ !inputs.before-dir && !inputs.after-dir }}
       shell: bash
       run: |
         git --work-tree="$AFTER_DIR" checkout HEAD -- .
@@ -60,13 +67,13 @@ runs:
       shell: bash
       run: docker pull "${{ inputs.malcontent-image }}"
 
-    - name: Analyze base commit
+    - name: Analyze base commit directory
       shell: bash
       run: |
         docker run --rm -v "$BEFORE_DIR:/home/nonroot/malcontent" \
           "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
 
-    - name: Analyze PR commit
+    - name: Analyze PR commit directory
       shell: bash
       run: |
         docker run --rm -v "$AFTER_DIR:/home/nonroot/malcontent" \
@@ -105,22 +112,11 @@ runs:
 
         echo "critical=$critical" >> $GITHUB_OUTPUT
         echo "high=$high" >> $GITHUB_OUTPUT
-
-        if $critical; then
-          echo "🔴 CRITICAL finding detected"
-        fi
-        if $high; then
-          echo "🟠 HIGH finding detected"
-        fi
-        if ! $critical && ! $high; then
-          echo "✅ No CRITICAL or HIGH findings"
-        fi
-
         echo "diff-json=${OUTFILE}" >> $GITHUB_OUTPUT
 
     - name: Comment on PR with findings
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: peter-evans/create-or-update-comment@v4
+      uses: peter-evans/create-or-update-comment@d31836d4564a32161adf3ad755c30846027b8f78 # v4.0.2
       with:
         GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
         ISSUE_NUMBER: ${{ github.event.pull_request.number }}
@@ -130,17 +126,17 @@ runs:
           <details><summary><code>/home/nonroot/malcontent/v8.3.40/utils/downloads.py → v8.3.41</code></summary>
           
           - **[CRITICAL]** file-level risk  
-          - **[HIGH]** [chmod_github_attachment](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/github.yara#chmod_github_attachment): downloads program from GitHub blob  
-          - **[HIGH]** [py_dropper_chmod](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/python.yara#py_dropper_chmod): fetch, stores, chmods, and execute programs  
-          - **[HIGH]** [python_setsid_remove](https://github.com/chainguard-dev/malcontent/blob/main/rules/evasion/self_deletion/run_and_delete.yara#python_setsid_remove): fetch, run in background, delete  
-          - **[HIGH]** [chmod_group_writeable](https://github.com/chainguard-dev/malcontent/blob/main/rules/fs/permission/permission-modify.yara#chmod_group_writeable): Makes path group writeable and executable  
-          - **[HIGH]** [hardcoded_host_port_over_10k](https://github.com/chainguard-dev/malcontent/blob/main/rules/net/ip/host_port.yara#hardcoded_host_port_over_10k): hardcoded hostname:port destination with high port
+          - **[HIGH]** [chmod_github_attachment](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/github.yara#chmod_github_attachment)  
+          - **[HIGH]** [py_dropper_chmod](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/python.yara#py_dropper_chmod)  
+          - **[HIGH]** [python_setsid_remove](https://github.com/chainguard-dev/malcontent/blob/main/rules/evasion/self_deletion/run_and_delete.yara#python_setsid_remove)  
+          - **[HIGH]** [chmod_group_writeable](https://github.com/chainguard-dev/malcontent/blob/main/rules/fs/permission/permission-modify.yara#chmod_group_writeable)  
+          - **[HIGH]** [hardcoded_host_port_over_10k](https://github.com/chainguard-dev/malcontent/blob/main/rules/net/ip/host_port.yara#hardcoded_host_port_over_10k)  
           
           </details>
 
     - name: Add malcontent/critical label to PR
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
+      uses: actions/github-script@f9781998b6e6ec13e4c4ef2c5401508c328d419f # v7.0.1
       with:
         script: |
           const label = 'malcontent/critical';
