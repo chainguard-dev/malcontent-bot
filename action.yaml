@@ -97,18 +97,37 @@ runs:
       id: detect
       shell: bash
       run: |
-        critical=false
-        high=false
+        has_critical=false
+        has_high=false
+        JSON="$OUTFILE"
 
-        jq -e '.Diff.Modified[] | select(.RiskLevel == "CRITICAL")' "$OUTFILE" && critical=true || true
-        jq -e '.Diff.Modified[] | select(.RiskLevel == "HIGH")' "$OUTFILE" && high=true || true
+        if jq -e '.Diff.Modified[].RiskLevel == "CRITICAL"' "$JSON" > /dev/null; then
+          has_critical=true
+        fi
+        if jq -e '.Diff.Modified[].RiskLevel == "HIGH"' "$JSON" > /dev/null; then
+          has_high=true
+        fi
+        
+        if jq -e '.Diff.Modified[].Behaviors[]?.RiskLevel == "CRITICAL"' "$JSON" > /dev/null; then
+          has_critical=true
+        fi
+        if jq -e '.Diff.Modified[].Behaviors[]?.RiskLevel == "HIGH"' "$JSON" > /dev/null; then
+          has_high=true
+        fi
 
-        jq -e '.Diff.Modified[].Behaviors[]? | select(.RiskLevel == "CRITICAL")' "$OUTFILE" && critical=true || true
-        jq -e '.Diff.Modified[].Behaviors[]? | select(.RiskLevel == "HIGH")' "$OUTFILE" && high=true || true
+        echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
+        echo "high=$has_high" >> "$GITHUB_OUTPUT"
+        echo "diff-json=${OUTFILE}" >> "$GITHUB_OUTPUT"
 
-        echo "critical=$critical" >> $GITHUB_OUTPUT
-        echo "high=$high" >> $GITHUB_OUTPUT
-        echo "diff-json=${OUTFILE}" >> $GITHUB_OUTPUT
+        if $has_critical; then
+          echo "🔴 CRITICAL finding detected"
+        fi
+        if $has_high; then
+          echo "🟠 HIGH finding detected"
+        fi
+        if ! $has_critical && ! $has_high; then
+          echo "✅ No CRITICAL or HIGH findings"
+        fi
 
     - name: Comment on PR with findings
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
