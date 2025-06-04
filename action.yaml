@@ -112,7 +112,7 @@ runs:
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
       uses: peter-evans/create-or-update-comment@v4
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
         ISSUE_NUMBER: ${{ github.event.pull_request.number }}
         body: |
           ### 🛡️ Malcontent Findings: v8.3.40 → v8.3.41
