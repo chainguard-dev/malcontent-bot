@@ -116,7 +116,7 @@ runs:
 
     - name: Comment on PR with findings
       if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: peter-evans/create-or-update-comment@d31836d4564a32161adf3ad755c30846027b8f78 # v4.0.2
+      uses: peter-evans/create-or-update-comment@v4
       with:
         GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
         ISSUE_NUMBER: ${{ github.event.pull_request.number }}
