@@ -24,10 +24,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Setup working environment
-      shell: bash
-      run: mkdir -p scans
-
     - name: Determine before/after dirs
       shell: bash
       run: |
@@ -43,7 +39,7 @@ runs:
           echo "BEFORE_DIR=$BEFORE_DIR" >> $GITHUB_ENV
           echo "AFTER_DIR=$AFTER_DIR" >> $GITHUB_ENV
         fi
-        echo "OUTFILE=${{ github.workspace }}/scans/malcontent-diff.json" >> $GITHUB_ENV
+        echo "OUTFILE=${{ github.workspace }}/malcontent-diff.json" >> $GITHUB_ENV
 
     - name: Checkout full repo history
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.1
