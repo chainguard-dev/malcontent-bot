@@ -75,23 +75,6 @@ runs:
         docker run --rm -v "$AFTER_DIR:/home/nonroot/malcontent" \
           "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
 
-    - name: List contents of BEFORE_DIR and AFTER_DIR
-      shell: bash
-      run: |
-        if [[ -n "${{ inputs.before-dir }}" ]]; then
-          echo "Contents of BEFORE_DIR ($BEFORE_DIR):"
-          tree "$BEFORE_DIR"
-        else
-          echo "Skipping BEFORE_DIR debug; input.before-dir not provided"
-        fi
-    
-        if [[ -n "${{ inputs.after-dir }}" ]]; then
-          echo "Contents of AFTER_DIR ($AFTER_DIR):"
-          tree "$AFTER_DIR"
-        else
-          echo "Skipping AFTER_DIR debug; input.after-dir not provided"
-        fi
-        
     - name: Run malcontent diff
       shell: bash
       run: |
@@ -120,24 +103,24 @@ runs:
         echo "Dumping diff JSON:"
         cat "$OUTFILE" | jq .
 
-        if jq -e '.Diff.Modified[].RiskLevel == "CRITICAL"' "$JSON" > /dev/null; then
-          has_critical=true
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null; then
+        has_critical=true
         fi
-        if jq -e '.Diff.Modified[].RiskLevel == "HIGH"' "$JSON" > /dev/null; then
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "HIGH")' "$JSON" > /dev/null; then
           has_high=true
         fi
         
-        if jq -e '.Diff.Modified[].Behaviors[]?.RiskLevel == "CRITICAL"' "$JSON" > /dev/null; then
+        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "CRITICAL")' "$JSON" > /dev/null; then
           has_critical=true
         fi
-        if jq -e '.Diff.Modified[].Behaviors[]?.RiskLevel == "HIGH"' "$JSON" > /dev/null; then
+        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "HIGH")' "$JSON" > /dev/null; then
           has_high=true
         fi
-
+        
         echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
         echo "high=$has_high" >> "$GITHUB_OUTPUT"
         echo "diff-json=${OUTFILE}" >> "$GITHUB_OUTPUT"
-
+        
         if $has_critical; then
           echo "🔴 CRITICAL finding detected"
         fi
