@@ -75,6 +75,14 @@ runs:
         docker run --rm -v "$AFTER_DIR:/home/nonroot/malcontent" \
           "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
 
+    - name: Debug: List contents of BEFORE_DIR and AFTER_DIR
+      shell: bash
+      run: |
+        echo "Contents of BEFORE_DIR ($BEFORE_DIR):"
+        tree "$BEFORE_DIR" || find "$BEFORE_DIR"
+        echo "Contents of AFTER_DIR ($AFTER_DIR):"
+        tree "$AFTER_DIR" || find "$AFTER_DIR"
+        
     - name: Run malcontent diff
       shell: bash
       run: |
