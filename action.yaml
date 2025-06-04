@@ -1,0 +1,100 @@
+name: "ScanMalware"
+description: "Runs malcontent diff between base commit and PR for malware scanning"
+inputs:
+  malcontent-image:
+    description: "Fully qualified Malcontent image"
+    required: true
+    default: "cgr.dev/chainguard/malcontent@sha256:fdfca44c401a5ca98af51292a821278644895bc1963f7a76a733d76647ff0ede"
+outputs:
+  critical:
+    description: "true if CRITICAL malware was found"
+  high:
+    description: "true if HIGH malware was found"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup environment
+      shell: bash
+      run: |
+        mkdir -p scans before after
+        echo "SCANS_DIR=${{ github.workspace }}/scans" >> $GITHUB_ENV
+        echo "BEFORE_DIR=${{ github.workspace }}/" >> $GITHUB_ENV
+        echo "AFTER_DIR=${{ github.workspace }}/after" >> $GITHUB_ENV
+        echo "OUTFILE=${{ github.workspace }}/scans/malcontent-diff.json" >> $GITHUB_ENV
+        
+    - name: Checkout full history
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+  - name: Extract base commit files
+      shell: bash
+      run: |
+        BASE_SHA=$(git merge-base HEAD origin/main)
+        git --work-tree="$BEFORE_DIR" checkout "$BASE_SHA" -- .
+
+    - name: Extract PR commit files
+      shell: bash
+      run: |
+        git --work-tree="$AFTER_DIR" checkout HEAD -- .
+
+    - name: Pull malcontent image
+      shell: bash
+      run: docker pull "${{ inputs.malcontent-image }}"
+
+    - name: Analyze base commit
+      shell: bash
+      run: |
+        docker run --rm -v "$BEFORE_DIR:/home/nonroot/malcontent" \
+          "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
+
+    - name: Analyze PR commit
+      shell: bash
+      run: |
+        docker run --rm -v "$AFTER_DIR:/home/nonroot/malcontent" \
+          "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
+
+    - name: Run malcontent diff
+      shell: bash
+      run: |
+        CONTAINER_NAME=malcontent-diff-run
+        OUTFILE_IN_CONTAINER="/home/nonroot/malcontent-diff.json"
+
+        docker run --name "$CONTAINER_NAME" \
+          -v "$BEFORE_DIR:/home/nonroot/before" \
+          -v "$AFTER_DIR:/home/nonroot/after" \
+          "${{ inputs.malcontent-image }}" \
+          --min-risk=high \
+          --format=json \
+          --output="$OUTFILE_IN_CONTAINER" \
+          diff /home/nonroot/before /home/nonroot/after
+
+        docker cp "$CONTAINER_NAME:$OUTFILE_IN_CONTAINER" "$OUTFILE"
+        docker rm "$CONTAINER_NAME" > /dev/null
+
+    - name: Set outputs for CRITICAL and HIGH findings
+      shell: bash
+      run: |
+        critical=false
+        high=false
+
+        jq -e '.Diff.Modified[] | select(.RiskLevel == "CRITICAL")' "$OUTFILE" && critical=true || true
+        jq -e '.Diff.Modified[] | select(.RiskLevel == "HIGH")' "$OUTFILE" && high=true || true
+
+        jq -e '.Diff.Modified[].Behaviors[]? | select(.RiskLevel == "CRITICAL")' "$OUTFILE" && critical=true || true
+        jq -e '.Diff.Modified[].Behaviors[]? | select(.RiskLevel == "HIGH")' "$OUTFILE" && high=true || true
+
+        echo "critical=$critical" >> $GITHUB_OUTPUT
+        echo "high=$high" >> $GITHUB_OUTPUT
+
+        if $has_critical; then
+            echo "🔴 CRITICAL finding detected"
+          fi
+          if $has_high; then
+            echo "🟠 HIGH finding detected"
+          fi
+          if ! $has_critical && ! $has_high; then
+            echo "✅ No CRITICAL or HIGH findings"
+          fi
+
