@@ -126,6 +126,9 @@ runs:
       with:
         name: malcontent-diff-md
         path: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
+
+    - name: Append Markdown diff to job summary
+      run: cat "${{ steps.malcontentdiffmd.outputs.outfile_md }}" >> $GITHUB_STEP_SUMMARY
     
     # - name: Set outputs for CRITICAL and HIGH findings
     #   id: detect
