@@ -14,12 +14,9 @@ inputs:
     required: false
 
 outputs:
-  critical:
-    description: "true if CRITICAL malware was found"
-  high:
-    description: "true if HIGH malware was found"
-  diff-json:
-    description: "Path to the malcontent diff JSON report"
+  critical: ${{ steps.detect.outputs.critical }}
+  high: ${{ steps.detect.outputs.high }}
+  diff-markdown: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
 
 runs:
   using: "composite"
@@ -94,7 +91,7 @@ runs:
         
         docker cp "$MALCONTENT_JSON_CONTAINER_NAME:$OUTFILE_JSON_IN_CONTAINER" "$OUTFILE"
         docker rm "$MALCONTENT_JSON_CONTAINER_NAME" > /dev/null
-        echo "OUTFILE=$OUTFILE" >> $GITHUB_OUTPUT
+        echo "outfile=$OUTFILE" >> $GITHUB_OUTPUT
         
     - name: Run malcontent diff MD
       id: malcontentdiffmd
@@ -116,7 +113,7 @@ runs:
 
         docker cp "$MALCONTENT_MD_CONTAINER_NAME:$OUTFILE_MD_IN_CONTAINER" "$OUTFILE_MD"
         docker rm "$MALCONTENT_MD_CONTAINER_NAME" > /dev/null
-        echo "OUTFILE_MD=$OUTFILE_MD" >> $GITHUB_OUTPUT        
+        echo "outfile_md=$OUTFILE_MD" >> $GITHUB_OUTPUT        
         
     - name: Upload Markdown diff report
       uses: actions/upload-artifact@v4
@@ -148,10 +145,6 @@ runs:
           has_high=true
         fi
         
-        echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
-        echo "high=$has_high" >> "$GITHUB_OUTPUT"
-        echo "diff-json=${OUTFILE}" >> "$GITHUB_OUTPUT"
-        
         if $has_critical; then
           echo "🔴 CRITICAL finding detected"
         fi
@@ -162,52 +155,56 @@ runs:
           echo "✅ No CRITICAL or HIGH findings"
         fi
 
-    - name: Comment on PR with findings
-      if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: peter-evans/create-or-update-comment@v4
-      with:
-        GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
-        ISSUE_NUMBER: ${{ github.event.pull_request.number }}
-        body: |
-          ### 🛡️ Malcontent Findings: v8.3.40 → v8.3.41
-          
-          <details><summary><code>/home/nonroot/malcontent/v8.3.40/utils/downloads.py → v8.3.41</code></summary>
-          
-          - **[CRITICAL]** file-level risk  
-          - **[HIGH]** [chmod_github_attachment](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/github.yara#chmod_github_attachment)  
-          - **[HIGH]** [py_dropper_chmod](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/python.yara#py_dropper_chmod)  
-          - **[HIGH]** [python_setsid_remove](https://github.com/chainguard-dev/malcontent/blob/main/rules/evasion/self_deletion/run_and_delete.yara#python_setsid_remove)  
-          - **[HIGH]** [chmod_group_writeable](https://github.com/chainguard-dev/malcontent/blob/main/rules/fs/permission/permission-modify.yara#chmod_group_writeable)  
-          - **[HIGH]** [hardcoded_host_port_over_10k](https://github.com/chainguard-dev/malcontent/blob/main/rules/net/ip/host_port.yara#hardcoded_host_port_over_10k)  
-          
-          </details>
+        echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
+        echo "high=$has_high" >> "$GITHUB_OUTPUT"
+        echo "diff-json=$JSON" >> "$GITHUB_OUTPUT"
 
-    - name: Add malcontent/critical label to PR
-      if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const label = 'malcontent/critical';
-          const {owner, repo} = context.repo;
-          const issue_number = context.payload.pull_request.number;
+    # - name: Comment on PR with findings
+    #   if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
+    #   uses: peter-evans/create-or-update-comment@v4
+    #   with:
+    #     GITHUB_TOKEN: ${{ steps.octo-sts.outputs.token }}
+    #     ISSUE_NUMBER: ${{ github.event.pull_request.number }}
+    #     body: |
+    #       ### 🛡️ Malcontent Findings: v8.3.40 → v8.3.41
+          
+    #       <details><summary><code>/home/nonroot/malcontent/v8.3.40/utils/downloads.py → v8.3.41</code></summary>
+          
+    #       - **[CRITICAL]** file-level risk  
+    #       - **[HIGH]** [chmod_github_attachment](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/github.yara#chmod_github_attachment)  
+    #       - **[HIGH]** [py_dropper_chmod](https://github.com/chainguard-dev/malcontent/blob/main/rules/c2/tool_transfer/python.yara#py_dropper_chmod)  
+    #       - **[HIGH]** [python_setsid_remove](https://github.com/chainguard-dev/malcontent/blob/main/rules/evasion/self_deletion/run_and_delete.yara#python_setsid_remove)  
+    #       - **[HIGH]** [chmod_group_writeable](https://github.com/chainguard-dev/malcontent/blob/main/rules/fs/permission/permission-modify.yara#chmod_group_writeable)  
+    #       - **[HIGH]** [hardcoded_host_port_over_10k](https://github.com/chainguard-dev/malcontent/blob/main/rules/net/ip/host_port.yara#hardcoded_host_port_over_10k)  
+          
+    #       </details>
 
-          try {
-            await github.rest.issues.getLabel({owner, repo, name: label});
-          } catch (e) {
-            if (e.status === 404) {
-              await github.rest.issues.createLabel({
-                owner, repo,
-                name: label,
-                color: 'b60205',
-                description: 'Critical malware risk detected by malcontent'
-              });
-            } else {
-              throw e;
-            }
-          }
+    # - name: Add malcontent/critical label to PR
+    #   if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
+    #   uses: actions/github-script@v7
+    #   with:
+    #     script: |
+    #       const label = 'malcontent/critical';
+    #       const {owner, repo} = context.repo;
+    #       const issue_number = context.payload.pull_request.number;
 
-          await github.rest.issues.addLabels({
-            owner, repo, issue_number,
-            labels: [label]
-          });
-          core.notice(`Added "${label}" label to PR #${issue_number}`);
+    #       try {
+    #         await github.rest.issues.getLabel({owner, repo, name: label});
+    #       } catch (e) {
+    #         if (e.status === 404) {
+    #           await github.rest.issues.createLabel({
+    #             owner, repo,
+    #             name: label,
+    #             color: 'b60205',
+    #             description: 'Critical malware risk detected by malcontent'
+    #           });
+    #         } else {
+    #           throw e;
+    #         }
+    #       }
+
+    #       await github.rest.issues.addLabels({
+    #         owner, repo, issue_number,
+    #         labels: [label]
+    #       });
+    #       core.notice(`Added "${label}" label to PR #${issue_number}`);
