@@ -12,7 +12,11 @@ inputs:
   after-dir:
     description: "Directory path for PR commit files (optional)"
     required: false
-
+  min-risk:
+    description: "Minimum risk level to include in the report (e.g. low, medium, high, critical)"
+    required: false
+    default: "medium"
+    
 outputs:
   diff-markdown:
     description: "Path to the malcontent diff Markdown report"
@@ -90,7 +94,7 @@ runs:
           -v "$BEFORE_DIR:/home/nonroot/before" \
           -v "$AFTER_DIR:/home/nonroot/after" \
           "${{ inputs.malcontent-image }}" \
-          --min-risk=high \
+          --min-risk="${{ inputs.min-risk }}" \
           --format=json \
           --output="$OUTFILE_JSON_IN_CONTAINER" \
           diff /home/nonroot/before /home/nonroot/after > /dev/null 2>&1
@@ -112,7 +116,7 @@ runs:
           -v "$BEFORE_DIR:/home/nonroot/before" \
           -v "$AFTER_DIR:/home/nonroot/after" \
           "${{ inputs.malcontent-image }}" \
-          --min-risk=high \
+          --min-risk="${{ inputs.min-risk }}" \
           --format=markdown \
           --output="$OUTFILE_MD_IN_CONTAINER" \
           diff /home/nonroot/before /home/nonroot/after
@@ -137,32 +141,72 @@ runs:
       run: |
         has_critical=false
         has_high=false
+        has_medium=false
+        has_low=false
+    
         JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
         echo "Dumping diff JSON:"
         cat "$JSON" | jq .
-
-        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null; then
-        has_critical=true
-        fi
-        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "HIGH")' "$JSON" > /dev/null; then
-          has_high=true
-        fi
-        
-        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "CRITICAL")' "$JSON" > /dev/null; then
+    
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null ||
+           jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "CRITICAL")' "$JSON" > /dev/null; then
           has_critical=true
         fi
-        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "HIGH")' "$JSON" > /dev/null; then
+    
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "HIGH")' "$JSON" > /dev/null ||
+           jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "HIGH")' "$JSON" > /dev/null; then
           has_high=true
         fi
-        
+    
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "MEDIUM")' "$JSON" > /dev/null ||
+           jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "MEDIUM")' "$JSON" > /dev/null; then
+          has_medium=true
+        fi
+    
+        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "LOW")' "$JSON" > /dev/null ||
+           jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "LOW")' "$JSON" > /dev/null; then
+          has_low=true
+        fi
+    
         echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
         echo "high=$has_high" >> "$GITHUB_OUTPUT"
         echo "diff-json=$JSON" >> "$GITHUB_OUTPUT"
+    
+        echo "Configured minimum risk threshold: ${{ inputs.min-risk }}"
+    
+        case "${{ inputs.min-risk }}" in
+          critical)
+            if $has_critical; then
+              echo "❌ Exiting: CRITICAL finding(s) detected"
+              exit 1
+            fi
+            ;;
+          high)
+            if $has_critical || $has_high; then
+              echo "❌ Exiting: HIGH or CRITICAL finding(s) detected"
+              exit 1
+            fi
+            ;;
+          medium)
+            if $has_critical || $has_high || $has_medium; then
+              echo "❌ Exiting: MEDIUM or higher finding(s) detected"
+              exit 1
+            fi
+            ;;
+          low)
+            if $has_critical || $has_high || $has_medium || $has_low; then
+              echo "❌ Exiting: LOW or higher finding(s) detected"
+              exit 1
+            fi
+            ;;
+          none)
+            echo "ℹ️ No enforced exit for min-risk=none"
+            ;;
+          *)
+            echo "⚠️ Unknown min-risk value: '${{ inputs.min-risk }}'. No exit enforced."
+            ;;
+        esac
 
-        if $has_critical; then
-          echo "❌ Critical findings detected by Malcontent!"
-          exit 1
-        fi
         
     # - name: Comment on PR with findings
     #   if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
