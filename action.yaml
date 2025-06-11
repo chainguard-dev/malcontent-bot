@@ -40,6 +40,7 @@ runs:
           echo "AFTER_DIR=$AFTER_DIR" >> $GITHUB_ENV
         fi
         echo "OUTFILE=${{ github.workspace }}/malcontent-diff.json" >> $GITHUB_ENV
+        echo "OUTFILE_MD=${{ github.workspace }}/malcontent-diff.md" >> $GITHUB_ENV
 
     - name: Checkout full repo history
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.1
@@ -82,7 +83,6 @@ runs:
         MALCONTENT_MD_CONTAINER_NAME=malcontent-diff-run-md
         OUTFILE_JSON_IN_CONTAINER="/home/nonroot/malcontent-diff.json"
         OUTFILE_MD_IN_CONTAINER="/home/nonroot/malcontent-diff.md"
-        OUTFILE_MD_LOCAL="${OUTFILE%.json}.md"
       
         # Run malcontent diff to get the JSON but hide the console output
         docker run --name "$MALCONTENT_JSON_CONTAINER_NAME" \
@@ -106,11 +106,14 @@ runs:
           --format=markdown \
           diff /home/nonroot/before /home/nonroot/after
 
+        docker cp "$MALCONTENT_MD_CONTAINER_NAME:$OUTFILE_MD_IN_CONTAINER" "$OUTFILE_MD"
+        docker rm "$MALCONTENT_MD_CONTAINER_NAME" > /dev/null
+        
     - name: Upload Markdown diff report
       uses: actions/upload-artifact@v4
       with:
         name: malcontent-diff-report
-        path: ${{ steps.run-malcontent-diff.outputs.OUTFILE_MD_LOCAL }}
+        path: ${{ steps.run-malcontent-diff.outputs.OUTFILE_MD }}
 
     - name: Set outputs for CRITICAL and HIGH findings
       id: detect
