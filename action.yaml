@@ -39,9 +39,7 @@ runs:
           echo "BEFORE_DIR=$BEFORE_DIR" >> $GITHUB_ENV
           echo "AFTER_DIR=$AFTER_DIR" >> $GITHUB_ENV
         fi
-        echo "OUTFILE=${{ github.workspace }}/malcontent-diff.json" >> $GITHUB_ENV
-        echo "OUTFILE_MD=${{ github.workspace }}/malcontent-diff.md" >> $GITHUB_ENV
-
+        
     - name: Checkout full repo history
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.1
       with:
@@ -111,6 +109,9 @@ runs:
         docker cp "$MALCONTENT_MD_CONTAINER_NAME:$OUTFILE_MD_IN_CONTAINER" "$OUTFILE_MD"
         docker rm "$MALCONTENT_MD_CONTAINER_NAME" > /dev/null
         
+        echo "OUTFILE_MD=$OUTFILE_MD" >> $GITHUB_OUTPUT
+        echo "OUTFILE=$OUTFILE" >> $GITHUB_OUTPUT
+        
     - name: Upload Markdown diff report
       uses: actions/upload-artifact@v4
       with:
@@ -123,7 +124,7 @@ runs:
       run: |
         has_critical=false
         has_high=false
-        JSON="$OUTFILE"
+        JSON="${{ steps.malcontentdiff.outputs.outfile }}"
         echo "Dumping diff JSON:"
         cat "$OUTFILE" | jq .
 
