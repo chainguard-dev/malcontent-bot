@@ -104,6 +104,7 @@ runs:
           "${{ inputs.malcontent-image }}" \
           --min-risk=high \
           --format=markdown \
+          --output="$OUTFILE_MD_IN_CONTAINER" \
           diff /home/nonroot/before /home/nonroot/after
 
         docker cp "$MALCONTENT_MD_CONTAINER_NAME:$OUTFILE_MD_IN_CONTAINER" "$OUTFILE_MD"
