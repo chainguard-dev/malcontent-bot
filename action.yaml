@@ -112,7 +112,7 @@ runs:
         name: malcontent-diff-report
         path: ${{ steps.YOUR_PREVIOUS_STEP.outputs.OUTFILE_MD_LOCAL }}
 
-- name: Set outputs for CRITICAL and HIGH findings
+    - name: Set outputs for CRITICAL and HIGH findings
       id: detect
       shell: bash
       run: |
