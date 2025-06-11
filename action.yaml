@@ -130,7 +130,7 @@ runs:
       run: |
         has_critical=false
         has_high=false
-        JSON="${{ steps.malcontentdiff.outputs.outfile }}"
+        JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
         echo "Dumping diff JSON:"
         cat "$OUTFILE" | jq .
 
