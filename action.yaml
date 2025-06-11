@@ -139,7 +139,7 @@ runs:
         has_high=false
         JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
         echo "Dumping diff JSON:"
-        cat "$OUTFILE" | jq .
+        cat "$JSON" | jq .
 
         if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null; then
         has_critical=true
