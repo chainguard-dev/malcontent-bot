@@ -199,9 +199,6 @@ runs:
               exit 1
             fi
             ;;
-          none)
-            echo "ℹ️ No enforced exit for min-risk=none"
-            ;;
           *)
             echo "⚠️ Unknown min-risk value: '${{ inputs.min-risk }}'. No exit enforced."
             ;;
