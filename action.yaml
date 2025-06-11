@@ -14,9 +14,15 @@ inputs:
     required: false
 
 outputs:
-  critical: ${{ steps.detect.outputs.critical }}
-  high: ${{ steps.detect.outputs.high }}
-  diff-markdown: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
+  critical:
+    description: "true if CRITICAL malware was found"
+    value: ${{ steps.detect.outputs.critical }}
+  high:
+    description: "true if HIGH malware was found"
+    value: ${{ steps.detect.outputs.high }}
+  diff-markdown:
+    description: "Path to the malcontent diff Markdown report"
+    value: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
 
 runs:
   using: "composite"
