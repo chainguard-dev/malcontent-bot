@@ -79,18 +79,26 @@ runs:
       shell: bash
       run: |
         CONTAINER_NAME=malcontent-diff-run
-        OUTFILE_IN_CONTAINER="/home/nonroot/malcontent-diff.json"
-
+        OUTFILE_JSON_IN_CONTAINER="/home/nonroot/malcontent-diff.json"
+        OUTFILE_MD_IN_CONTAINER="/home/nonroot/malcontent-diff.md"
+        OUTFILE_MD_LOCAL="${OUTFILE%.json}.md"
+      
+        # Run malcontent diff to get the JSON but hide the console output
         docker run --name "$CONTAINER_NAME" \
           -v "$BEFORE_DIR:/home/nonroot/before" \
           -v "$AFTER_DIR:/home/nonroot/after" \
           "${{ inputs.malcontent-image }}" \
           --min-risk=high \
           --format=json \
-          --output="$OUTFILE_IN_CONTAINER" \
-          diff /home/nonroot/before /home/nonroot/after
+          --output="$OUTFILE_JSON_IN_CONTAINER" \
+          diff /home/nonroot/before /home/nonroot/after > /dev/null 2>&1
+      
+        # Grab JSON
+        docker cp "$CONTAINER_NAME:$OUTFILE_JSON_IN_CONTAINER" "$OUTFILE"
 
-        docker cp "$CONTAINER_NAME:$OUTFILE_IN_CONTAINER" "$OUTFILE"
+        # Run malcontent diff a 2nd time for the markdown
+        docker exec "$CONTAINER_NAME" /bin/sh -c '"malcontent --min-risk=high --format=markdown --output=$OUTFILE_MD_IN_CONTAINER diff /home/nonroot/before /home/nonroot/after"'
+        docker cp "$CONTAINER_NAME:$OUTFILE_MD_IN_CONTAINER" "$OUTFILE_MD_LOCAL"
         docker rm "$CONTAINER_NAME" > /dev/null
 
     - name: Set outputs for CRITICAL and HIGH findings
