@@ -110,7 +110,7 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: malcontent-diff-report
-        path: ${{ steps.YOUR_PREVIOUS_STEP.outputs.OUTFILE_MD_LOCAL }}
+        path: ${{ steps.run-malcontent-diff.outputs.OUTFILE_MD_LOCAL }}
 
     - name: Set outputs for CRITICAL and HIGH findings
       id: detect
