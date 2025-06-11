@@ -14,15 +14,15 @@ inputs:
     required: false
 
 outputs:
-  critical:
-    description: "true if CRITICAL malware was found"
-    value: ${{ steps.detect.outputs.critical }}
-  high:
-    description: "true if HIGH malware was found"
-    value: ${{ steps.detect.outputs.high }}
   diff-markdown:
     description: "Path to the malcontent diff Markdown report"
     value: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
+  # critical:
+  #   description: "true if CRITICAL malware was found"
+  #   value: ${{ steps.detect.outputs.critical }}
+  # high:
+  #   description: "true if HIGH malware was found"
+  #   value: ${{ steps.detect.outputs.high }}
 
 runs:
   using: "composite"
@@ -127,43 +127,43 @@ runs:
         name: malcontent-diff-md
         path: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
     
-    - name: Set outputs for CRITICAL and HIGH findings
-      id: detect
-      shell: bash
-      run: |
-        has_critical=false
-        has_high=false
-        JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
-        echo "Dumping diff JSON:"
-        cat "$OUTFILE" | jq .
+    # - name: Set outputs for CRITICAL and HIGH findings
+    #   id: detect
+    #   shell: bash
+    #   run: |
+    #     has_critical=false
+    #     has_high=false
+    #     JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
+    #     echo "Dumping diff JSON:"
+    #     cat "$OUTFILE" | jq .
 
-        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null; then
-        has_critical=true
-        fi
-        if jq -e 'any(.Diff.Modified[].RiskLevel; . == "HIGH")' "$JSON" > /dev/null; then
-          has_high=true
-        fi
+    #     if jq -e 'any(.Diff.Modified[].RiskLevel; . == "CRITICAL")' "$JSON" > /dev/null; then
+    #     has_critical=true
+    #     fi
+    #     if jq -e 'any(.Diff.Modified[].RiskLevel; . == "HIGH")' "$JSON" > /dev/null; then
+    #       has_high=true
+    #     fi
         
-        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "CRITICAL")' "$JSON" > /dev/null; then
-          has_critical=true
-        fi
-        if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "HIGH")' "$JSON" > /dev/null; then
-          has_high=true
-        fi
+    #     if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "CRITICAL")' "$JSON" > /dev/null; then
+    #       has_critical=true
+    #     fi
+    #     if jq -e 'any(.Diff.Modified[].Behaviors[]?; .RiskLevel == "HIGH")' "$JSON" > /dev/null; then
+    #       has_high=true
+    #     fi
         
-        if $has_critical; then
-          echo "🔴 CRITICAL finding detected"
-        fi
-        if $has_high; then
-          echo "🟠 HIGH finding detected"
-        fi
-        if ! $has_critical && ! $has_high; then
-          echo "✅ No CRITICAL or HIGH findings"
-        fi
+    #     if $has_critical; then
+    #       echo "🔴 CRITICAL finding detected"
+    #     fi
+    #     if $has_high; then
+    #       echo "🟠 HIGH finding detected"
+    #     fi
+    #     if ! $has_critical && ! $has_high; then
+    #       echo "✅ No CRITICAL or HIGH findings"
+    #     fi
 
-        echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
-        echo "high=$has_high" >> "$GITHUB_OUTPUT"
-        echo "diff-json=$JSON" >> "$GITHUB_OUTPUT"
+    #     echo "critical=$has_critical" >> "$GITHUB_OUTPUT"
+    #     echo "high=$has_high" >> "$GITHUB_OUTPUT"
+    #     echo "diff-json=$JSON" >> "$GITHUB_OUTPUT"
 
     # - name: Comment on PR with findings
     #   if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
