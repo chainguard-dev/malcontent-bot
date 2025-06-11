@@ -77,6 +77,7 @@ runs:
     #       "${{ inputs.malcontent-image }}" analyze /home/nonroot/malcontent
 
     - name: Run malcontent diff
+      id: malcontentdiff
       shell: bash
       run: |
         MALCONTENT_JSON_CONTAINER_NAME=malcontent-diff-run-json
@@ -113,9 +114,9 @@ runs:
     - name: Upload Markdown diff report
       uses: actions/upload-artifact@v4
       with:
-        name: malcontent-diff-report
-        path: ${{ steps.run-malcontent-diff.outputs.OUTFILE_MD }}
-
+        name: malcontent-diff-md
+        path: ${{ steps.malcontentdiff.outputs.outfile_md }}
+    
     - name: Set outputs for CRITICAL and HIGH findings
       id: detect
       shell: bash
