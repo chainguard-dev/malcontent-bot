@@ -26,7 +26,7 @@ outputs:
     value: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
   diff-sarif:
     description: "Path to the malcontent SARIF report"
-    value: malcontent.sarif
+    value: ${{ steps.malcontent2sarif.outputs.outfile_sarif }}
 
 runs:
   using: "composite"
@@ -192,11 +192,14 @@ runs:
         esac
 
     - name: Convert Malcontent JSON to SARIF
+      id: malcontent2sarif
       shell: bash
       run: |
+        OUTFILE_SARIF="${{ github.workspace }}/malcontent.sarif"
         python3 scripts/convert_to_sarif.py \
         --input "${{ steps.malcontentdiffjson.outputs.outfile }}" \
         --output "malcontent.sarif"
+        echo "outfile_sarif=$OUTFILE_SARIF" >> $GITHUB_OUTPUT 
 
     - name: Print SARIF to console
       shell: bash
