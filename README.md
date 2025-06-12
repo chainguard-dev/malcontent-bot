@@ -6,7 +6,7 @@ Run static malware diff scans between two directories using [Malcontent](https:/
 
 ---
 
-## 🛡️ Behavior
+## Scenarios
 
 - Fails the workflow if malware findings meet or exceed the configured `min-risk` level.
 - Requires the caller to provide both `before-dir` and `after-dir`.
@@ -16,9 +16,28 @@ Run static malware diff scans between two directories using [Malcontent](https:/
 
 ---
 
-## 🚀 Usage
+## Usage
 
-### 🔍 Basic Example
+### Examples
+
+#### Nonblocking, Produce GitHub Markdown Summary
+
+```yaml
+jobs:
+  malware-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: chainguard-dev/malcontent-action@d3247e43f654c16ea49fcb5d11ff376f923e3035
+        id: malcontent
+        with:
+          before-dir: ./before
+          after-dir: ./after
+          min-risk: high
+          exit-code: 0
+```
+---
+
+#### Enable with CodeQL Code Scanning 
 
 ```yaml
 jobs:
@@ -69,4 +88,4 @@ These files are saved to the GitHub workspace and uploaded as artifacts.
 
 - [Malcontent GitHub repo](https://github.com/chainguard-dev/malcontent)
 - [YARA rule definitions](https://github.com/chainguard-dev/malcontent/tree/main/rules)
-- [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
+- [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning)
