@@ -1,20 +1,16 @@
-# 🔬 Scan Malware GitHub Action
+# Malcontent Action
 
-**Runs Chainguard's [Malcontent](https://github.com/chainguard-dev/malcontent) diff between the base commit and PR to detect and report potential malware.**
+> [GitHub Action](https://github.com/features/actions) for [Malcontent](https://github.com/chainguard-dev/malcontent)
 
-This composite GitHub Action compares two directories or Git commits, scans for malware risks, and fails the check if specified risk thresholds are exceeded.
+## Usage
 
----
-
-## Basic Usage
+### Scan CI Pipeline
 
 ```yaml
     uses: ./action
     with:
       min-risk: high  # Options: low, medium, high, critical
 ```
-
-## Inputs / Outputs
 
 ### Inputs
 
@@ -24,9 +20,12 @@ This composite GitHub Action compares two directories or Git commits, scans for 
 | `before-dir` | true | DIR1 baseline see https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff  | N/A |
 | `after-dir` | true | DIR2 see https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff  | N/A |
 | `min-risk` | false | Minimum risk level that causes a failure | low, medium, high, critical |
+| `exit-code` | false | Exit code to use when findings exceed the minimum risk threshold | 1 |
 
 ### Outputs
 
-| Name | Description |
-|------|-------------|
-| `diff-markdown` | Path to the generated Malcontent Diff Report in Markdown |
+| Name            | Description                                                                 |
+| --------------- | --------------------------------------------------------------------------- |
+| `diff-markdown` | Path to the generated Markdown report. **Fixed path:** `malcontent-diff.md` |
+| `diff-sarif`    | Path to the generated SARIF report. **Fixed path:** `malcontent.sarif`      |
+
