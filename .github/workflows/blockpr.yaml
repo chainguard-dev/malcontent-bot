@@ -1,13 +1,10 @@
 name: blockpr
 
 on:
-  push:
-    branches:
-      - blockpr
   pull_request:
     branches:
+      - main
       - blockpr
-  workflow_dispatch:
 
 jobs:
   scan:
@@ -35,13 +32,20 @@ jobs:
           scope: chainguard-dev/malcontent-action
           identity: blockpr
       
-      - name: Run malware test action on 8.3.40 → 8.3.41 diff
+      - name: Prepare before/after directories
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          mkdir before after
+          git --work-tree=before checkout origin/${{ github.event.pull_request.base.ref }} -- .
+          git --work-tree=after checkout HEAD -- .
+      
+      - name: Run malware scan diff (base branch vs PR head)
         id: malcontent
         uses: ./
         with:
           malcontent-image: "cgr.dev/chainguard/malcontent@sha256:fdfca44c401a5ca98af51292a821278644895bc1963f7a76a733d76647ff0ede"
-          before-dir: ${{ github.workspace }}/testfiles/malcontent-samples/python/2024.ultralytics/v8.3.40
-          after-dir: ${{ github.workspace }}/testfiles/malcontent-samples/python/2024.ultralytics/v8.3.41
+          before-dir: ${{ github.workspace }}/before
+          after-dir: ${{ github.workspace }}/after
           exit-code: 0
     
       - name: Upload SARIF
