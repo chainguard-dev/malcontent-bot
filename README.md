@@ -25,7 +25,8 @@ jobs:
   malware-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./action  # Or chainguard-dev/malcontent-action@v1
+      - uses: chainguard-dev/malcontent-action@v1
+        id: malcontent
         with:
           before-dir: ./before
           after-dir: ./after
