@@ -1,12 +1,13 @@
 import json
 import argparse
+import os
 
 # Risk level to SARIF level
 def map_risk_to_level(risk):
     return {
         "CRITICAL": "error",
-        "HIGH": "error",     # updated from "warning"
-        "MEDIUM": "warning", # updated from "note"
+        "HIGH": "error",
+        "MEDIUM": "warning",
         "LOW": "note"
     }.get(risk.upper(), "note")
 
@@ -24,6 +25,9 @@ def create_sarif_result(file_path, behavior, rule_id_prefix):
     match_strings = behavior.get("MatchStrings", [])
     risk_level = behavior.get("RiskLevel", "MEDIUM")
 
+    # Normalize to relative path from /home/nonroot/after/
+    rel_path = os.path.relpath(file_path, "/home/nonroot/after")
+
     return {
         "ruleId": f"{rule_id_prefix}_{description.replace(' ', '_')[:50]}",
         "level": map_risk_to_level(risk_level),
@@ -34,7 +38,8 @@ def create_sarif_result(file_path, behavior, rule_id_prefix):
             {
                 "physicalLocation": {
                     "artifactLocation": {
-                        "uri": file_path
+                        "uri": rel_path,
+                        "uriBaseId": "%SRCROOT%"
                     }
                 }
             }
@@ -72,50 +77,53 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
     modified_files = data.get("Diff", {}).get("Modified", {})
 
     for label, file_data in modified_files.items():
-        file_path = file_data.get("Path", label)
-        behaviors = file_data.get("Behaviors", [])
-        file_risk_level = file_data.get("RiskLevel")
+        full_path = file_data.get("Path", label)
+        rel_path = os.path.relpath(full_path, "/home/nonroot/after")
+        risk_level = file_data.get("RiskLevel", "MEDIUM")
 
-        # Include file-level risk if present
-        if file_risk_level:
-            rule_id = f"malcontent_file_risk_{file_risk_level.lower()}"
-            description = f"File-level {file_risk_level} risk"
-            if rule_id not in rule_ids:
-                sarif["runs"][0]["tool"]["driver"]["rules"].append({
-                    "id": rule_id,
-                    "name": description,
-                    "shortDescription": { "text": description },
-                    "helpUri": "https://github.com/chainguard-dev/malcontent",
-                    "properties": {
-                        "tags": [],
-                        "security-severity": map_risk_to_severity(file_risk_level)
-                    }
-                })
-                rule_ids.add(rule_id)
-
-            results.append({
-                "ruleId": rule_id,
-                "level": map_risk_to_level(file_risk_level),
-                "message": { "text": description },
-                "locations": [
-                    {
-                        "physicalLocation": {
-                            "artifactLocation": {
-                                "uri": file_path
-                            }
-                        }
-                    }
-                ],
+        # Add file-level risk result
+        rule_id = f"malcontent_file_risk_{risk_level.lower()}"
+        if rule_id not in rule_ids:
+            sarif["runs"][0]["tool"]["driver"]["rules"].append({
+                "id": rule_id,
+                "name": f"File-level {risk_level} risk",
+                "shortDescription": {
+                    "text": f"File-level {risk_level} risk"
+                },
+                "helpUri": "https://github.com/chainguard-dev/malcontent",
                 "properties": {
                     "tags": [],
-                    "security-severity": map_risk_to_severity(file_risk_level)
+                    "security-severity": map_risk_to_severity(risk_level)
                 }
             })
+            rule_ids.add(rule_id)
 
-        # Include behavior-level findings
-        for behavior in behaviors:
+        results.append({
+            "ruleId": rule_id,
+            "level": map_risk_to_level(risk_level),
+            "message": {
+                "text": f"File-level {risk_level} risk"
+            },
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": rel_path,
+                            "uriBaseId": "%SRCROOT%"
+                        }
+                    }
+                }
+            ],
+            "properties": {
+                "tags": [],
+                "security-severity": map_risk_to_severity(risk_level)
+            }
+        })
+
+        # Add behavior-level results
+        for behavior in file_data.get("Behaviors", []):
             description = behavior.get("Description", "unknown")
-            risk_level = behavior.get("RiskLevel", "MEDIUM")
+            behavior_risk = behavior.get("RiskLevel", "MEDIUM")
             match_strings = behavior.get("MatchStrings", [])
             rule_id = f"malcontent_{description.replace(' ', '_')[:50]}"
 
@@ -129,13 +137,12 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
                     "helpUri": "https://github.com/chainguard-dev/malcontent",
                     "properties": {
                         "tags": match_strings,
-                        "security-severity": map_risk_to_severity(risk_level)
+                        "security-severity": map_risk_to_severity(behavior_risk)
                     }
                 })
                 rule_ids.add(rule_id)
 
-            result = create_sarif_result(file_path, behavior, "malcontent")
-            results.append(result)
+            results.append(create_sarif_result(full_path, behavior, "malcontent"))
 
     sarif["runs"][0]["results"] = results
 
