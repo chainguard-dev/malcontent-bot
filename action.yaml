@@ -123,7 +123,7 @@ runs:
       shell: bash
       run: cat "${{ steps.malcontentdiffmd.outputs.outfile_md }}" >> $GITHUB_STEP_SUMMARY
 
-    - name: Set outputs for CRITICAL and HIGH findings
+    - name: Detect Severity of Findings
       id: detect
       shell: bash
       run: |
@@ -131,7 +131,8 @@ runs:
         has_high=false
         has_medium=false
         has_low=false
-    
+        exit_code="${{ inputs.exit-code }}"
+        
         JSON="${{ steps.malcontentdiffjson.outputs.outfile }}"
         echo "Dumping diff JSON:"
         cat "$JSON" | jq .
@@ -164,25 +165,25 @@ runs:
           critical)
             if $has_critical; then
               echo "❌ Exiting: CRITICAL finding(s) detected"
-              exit ${{ inputs.exit-code }}
+              exit "$exit_code"
             fi
             ;;
           high)
             if $has_critical || $has_high; then
               echo "❌ Exiting: HIGH or CRITICAL finding(s) detected"
-              exit ${{ inputs.exit-code }}
+              exit "$exit_code"
             fi
             ;;
           medium)
             if $has_critical || $has_high || $has_medium; then
               echo "❌ Exiting: MEDIUM or higher finding(s) detected"
-              exit ${{ inputs.exit-code }}
+              exit "$exit_code"
             fi
             ;;
           low)
             if $has_critical || $has_high || $has_medium || $has_low; then
               echo "❌ Exiting: LOW or higher finding(s) detected"
-              exit ${{ inputs.exit-code }}
+              exit "$exit_code"
             fi
             ;;
           *)
