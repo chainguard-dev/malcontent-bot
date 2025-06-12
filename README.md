@@ -6,6 +6,16 @@ Run static malware diff scans between two directories using [Malcontent](https:/
 
 ---
 
+## 🛡️ Behavior
+
+- Fails the workflow if malware findings meet or exceed the configured `min-risk` level.
+- Requires the caller to provide both `before-dir` and `after-dir`.
+- Generates:
+  - A human-readable Markdown report
+  - A machine-readable SARIF report suitable for GitHub code scanning
+
+---
+
 ## 🚀 Usage
 
 ### 🔍 Basic Example
@@ -24,7 +34,7 @@ jobs:
 
 ---
 
-## 📥 Inputs
+### 📥 Inputs
 
 | Name              | Required | Description                                                                                       | Default |
 |-------------------|----------|---------------------------------------------------------------------------------------------------|---------|
@@ -36,7 +46,7 @@ jobs:
 
 ---
 
-## 📤 Outputs
+### 📤 Outputs
 
 | Name             | Description                                                                 |
 |------------------|-----------------------------------------------------------------------------|
@@ -47,17 +57,7 @@ These files are saved to the GitHub workspace and uploaded as artifacts.
 
 ---
 
-## 🛡️ Behavior
-
-- Fails the workflow if malware findings meet or exceed the configured `min-risk` level.
-- Requires the caller to provide both `before-dir` and `after-dir`.
-- Generates:
-  - A human-readable Markdown report
-  - A machine-readable SARIF report suitable for GitHub code scanning
-
----
-
-## 🧪 Example Exit Conditions
+### 🧪 Example Exit Conditions
 
 | `min-risk` Value | Fails If...                               |
 |------------------|--------------------------------------------|
