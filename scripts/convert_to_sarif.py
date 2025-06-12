@@ -13,11 +13,11 @@ def map_risk_to_level(risk):
 # Risk level to SARIF security-severity
 def map_risk_to_severity(risk):
     return {
-        "CRITICAL": 9.0,
-        "HIGH": 7.0,
-        "MEDIUM": 5.0,
-        "LOW": 3.0
-    }.get(risk.upper(), 3.0)
+        "CRITICAL": "9.0",
+        "HIGH": "7.0",
+        "MEDIUM": "5.0",
+        "LOW": "3.0"
+    }.get(risk.upper(), "3.0")
 
 def create_sarif_result(file_path, behavior, rule_id_prefix):
     description = behavior.get("Description", "No description provided")
