@@ -5,8 +5,8 @@ import argparse
 def map_risk_to_level(risk):
     return {
         "CRITICAL": "error",
-        "HIGH": "warning",
-        "MEDIUM": "note",
+        "HIGH": "error",     # updated from "warning"
+        "MEDIUM": "warning", # updated from "note"
         "LOW": "note"
     }.get(risk.upper(), "note")
 
@@ -74,7 +74,45 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
     for label, file_data in modified_files.items():
         file_path = file_data.get("Path", label)
         behaviors = file_data.get("Behaviors", [])
+        file_risk_level = file_data.get("RiskLevel")
 
+        # Include file-level risk if present
+        if file_risk_level:
+            rule_id = f"malcontent_file_risk_{file_risk_level.lower()}"
+            description = f"File-level {file_risk_level} risk"
+            if rule_id not in rule_ids:
+                sarif["runs"][0]["tool"]["driver"]["rules"].append({
+                    "id": rule_id,
+                    "name": description,
+                    "shortDescription": { "text": description },
+                    "helpUri": "https://github.com/chainguard-dev/malcontent",
+                    "properties": {
+                        "tags": [],
+                        "security-severity": map_risk_to_severity(file_risk_level)
+                    }
+                })
+                rule_ids.add(rule_id)
+
+            results.append({
+                "ruleId": rule_id,
+                "level": map_risk_to_level(file_risk_level),
+                "message": { "text": description },
+                "locations": [
+                    {
+                        "physicalLocation": {
+                            "artifactLocation": {
+                                "uri": file_path
+                            }
+                        }
+                    }
+                ],
+                "properties": {
+                    "tags": [],
+                    "security-severity": map_risk_to_severity(file_risk_level)
+                }
+            })
+
+        # Include behavior-level findings
         for behavior in behaviors:
             description = behavior.get("Description", "unknown")
             risk_level = behavior.get("RiskLevel", "MEDIUM")
