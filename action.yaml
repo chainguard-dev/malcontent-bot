@@ -199,9 +199,10 @@ runs:
     - name: Convert Malcontent JSON to SARIF
       run: |
       shell: bash
-      python3 scripts/convert_to_sarif.py \
+        python3 scripts/convert_to_sarif.py \
         --input "${{ steps.malcontentdiffjson.outputs.outfile }}" \
         --output "malcontent.sarif"
+
         
     # - name: Comment on PR with findings
     #   if: steps.detect.outputs.critical == 'true' && github.event_name == 'pull_request'
