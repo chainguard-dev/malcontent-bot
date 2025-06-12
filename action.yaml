@@ -19,12 +19,14 @@ inputs:
   exit-code:
     description: "Exit code to use when findings exceed the minimum risk threshold"
     required: false
-    default: "1"
-    
+    default: "1" 
 outputs:
   diff-markdown:
     description: "Path to the malcontent diff Markdown report"
     value: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
+  diff-sarif:
+    description: "Path to the malcontent SARIF report"
+    value: malcontent.sarif
 
 runs:
   using: "composite"
