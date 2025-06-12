@@ -2,30 +2,75 @@
 
 > [GitHub Action](https://github.com/features/actions) for [Malcontent](https://github.com/chainguard-dev/malcontent)
 
-## Usage
+Run static malware diff scans between two directories using [Malcontent](https://github.com/chainguard-dev/malcontent) and fail the CI pipeline based on severity thresholds.
 
-### Scan CI Pipeline
+---
+
+## 🚀 Usage
+
+### 🔍 Basic Example
 
 ```yaml
-    uses: ./action
-    with:
-      min-risk: high  # Options: low, medium, high, critical
+jobs:
+  malware-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./action  # Or chainguard-dev/malcontent-action@v1
+        with:
+          before-dir: ./before
+          after-dir: ./after
+          min-risk: high  # Options: none, low, medium, high, critical
 ```
 
-### Inputs
+---
 
-| Name | Required | Description | Default |
-|------|-------------|--------|
-| `malcontent-image` | false | Fully qualified Malcontent image reference | `cgr.dev/chainguard/malcontent@sha256:fdfca44c401a5ca98af51292a821278644895bc1963f7a76a733d76647ff0ede` |
-| `before-dir` | true | DIR1 baseline see https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff  | N/A |
-| `after-dir` | true | DIR2 see https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff  | N/A |
-| `min-risk` | false | Minimum risk level that causes a failure | low, medium, high, critical |
-| `exit-code` | false | Exit code to use when findings exceed the minimum risk threshold | 1 |
+## 📥 Inputs
 
-### Outputs
+| Name              | Required | Description                                                                                       | Default |
+|-------------------|----------|---------------------------------------------------------------------------------------------------|---------|
+| `malcontent-image`| false     | Fully qualified Malcontent image reference                                                       | `cgr.dev/chainguard/malcontent@sha256:fdfca44c401a5ca98af51292a821278644895bc1963f7a76a733d76647ff0ede` |
+| `before-dir`      | true      | Baseline directory (`DIR1`). [See instructions](https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff) | N/A     |
+| `after-dir`       | true      | Target directory (`DIR2`). [See instructions](https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff)   | N/A     |
+| `min-risk`        | false     | Minimum severity that causes a CI failure. Options: `none`, `low`, `medium`, `high`, `critical`  | `medium` |
+| `exit-code`       | false     | Exit code to use when findings exceed the severity threshold                                     | `1`     |
 
-| Name            | Description                                                                 |
-| --------------- | --------------------------------------------------------------------------- |
-| `diff-markdown` | Path to the generated Markdown report. **Fixed path:** `malcontent-diff.md` |
-| `diff-sarif`    | Path to the generated SARIF report. **Fixed path:** `malcontent.sarif`      |
+---
 
+## 📤 Outputs
+
+| Name             | Description                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| `diff-markdown`  | Path to the generated Markdown report. **Fixed path:** `malcontent-diff.md` |
+| `diff-sarif`     | Path to the generated SARIF report. **Fixed path:** `malcontent.sarif`       |
+
+These files are saved to the GitHub workspace and uploaded as artifacts.
+
+---
+
+## 🛡️ Behavior
+
+- Fails the workflow if malware findings meet or exceed the configured `min-risk` level.
+- Requires the caller to provide both `before-dir` and `after-dir`.
+- Generates:
+  - A human-readable Markdown report
+  - A machine-readable SARIF report suitable for GitHub code scanning
+
+---
+
+## 🧪 Example Exit Conditions
+
+| `min-risk` Value | Fails If...                               |
+|------------------|--------------------------------------------|
+| `critical`       | CRITICAL findings detected                 |
+| `high`           | HIGH or CRITICAL findings detected         |
+| `medium`         | MEDIUM, HIGH, or CRITICAL findings detected|
+| `low`            | LOW or higher findings detected            |
+| `none`           | Never fails — always passes                |
+
+---
+
+## 📎 Related
+
+- [Malcontent GitHub repo](https://github.com/chainguard-dev/malcontent)
+- [YARA rule definitions](https://github.com/chainguard-dev/malcontent/tree/main/rules)
+- [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
