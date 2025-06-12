@@ -57,18 +57,6 @@ These files are saved to the GitHub workspace and uploaded as artifacts.
 
 ---
 
-### 🧪 Example Exit Conditions
-
-| `min-risk` Value | Fails If...                               |
-|------------------|--------------------------------------------|
-| `critical`       | CRITICAL findings detected                 |
-| `high`           | HIGH or CRITICAL findings detected         |
-| `medium`         | MEDIUM, HIGH, or CRITICAL findings detected|
-| `low`            | LOW or higher findings detected            |
-| `none`           | Never fails — always passes                |
-
----
-
 ## 📎 Related
 
 - [Malcontent GitHub repo](https://github.com/chainguard-dev/malcontent)
