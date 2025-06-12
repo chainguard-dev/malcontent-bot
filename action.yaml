@@ -15,7 +15,7 @@ inputs:
   min-risk:
     description: "Minimum risk level to include in the report (e.g. low, medium, high, critical)"
     required: false
-    default: "medium"
+    default: "high"
   exit-code:
     description: "Exit code to use when findings exceed the minimum risk threshold"
     required: false
