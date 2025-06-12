@@ -8,11 +8,12 @@ Run static malware diff scans between two directories using [Malcontent](https:/
 
 ## Scenarios
 
-- Fails the workflow if malware findings meet or exceed the configured `min-risk` level.
-- Requires the caller to provide both `before-dir` and `after-dir`.
+- Fails the workflow (by default) if malware findings meet or exceed the configured `min-risk` level.
+- Requires the caller to provide both `before-dir` and `after-dir`
+  - Can be directories, docker images, or git checkouts see [Malcontent Diff](https://github.com/chainguard-dev/malcontent?tab=readme-ov-file#diff) for details
 - Generates:
-  - A human-readable Markdown report
-  - A machine-readable SARIF report suitable for GitHub code scanning
+  - A human-readable Markdown Summary
+  - A machine-readable [SARIF](https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=sarif#overview) report for ingestion into the [GitHub Code Scanning Engine](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning)
 
 ---
 
