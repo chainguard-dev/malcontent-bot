@@ -1,4 +1,4 @@
-# 🔬 Sca nMalware GitHub Action
+# 🔬 Scan Malware GitHub Action
 
 **Runs Chainguard's [Malcontent](https://github.com/chainguard-dev/malcontent) diff between the base commit and PR to detect and report potential malware.**
 
