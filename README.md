@@ -80,8 +80,6 @@ jobs:
 | `diff-markdown`  | Path to the generated Markdown report. **Fixed path:** `malcontent-diff.md` |
 | `diff-sarif`     | Path to the generated SARIF report. **Fixed path:** `malcontent.sarif`       |
 
-These files are saved to the GitHub workspace and uploaded as artifacts.
-
 ---
 
 ### Related
