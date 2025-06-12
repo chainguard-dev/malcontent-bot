@@ -29,8 +29,14 @@ jobs:
         with:
           before-dir: ./before
           after-dir: ./after
-          min-risk: high  # Options: none, low, medium, high, critical
-```
+          min-risk: high
+          exit-code: 0
+    
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858 #v3.29.0 - 11 Jun 2025
+        with:
+          sarif_file: ${{ steps.malcontent.outputs.diff-sarif }}
+          category: malcontent
 
 ---
 
