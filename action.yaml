@@ -114,7 +114,7 @@ runs:
         echo "outfile_md=$OUTFILE_MD" >> $GITHUB_OUTPUT        
         
     - name: Upload Markdown diff report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 #v4.6.2 - 19 March 2025
       with:
         name: malcontent-diff-md
         path: ${{ steps.malcontentdiffmd.outputs.outfile_md }}
