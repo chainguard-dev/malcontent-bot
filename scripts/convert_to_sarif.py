@@ -94,7 +94,6 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
                     "fullDescription": { "text": f"Overall risk detected in file: {file_path}" },
                     "help": {
                         "text": description,
-                        "markdown": f"**File-level Risk:** {description}\n\nThis file was flagged with a `{file_risk_level}` risk score based on overall changes."
                     },
                     "helpUri": "https://github.com/chainguard-dev/malcontent",
                     "properties": {
@@ -142,7 +141,6 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
                     },
                     "help": {
                         "text": description,
-                        "markdown": create_help_markdown(description, match_strings)
                     },
                     "helpUri": "https://github.com/chainguard-dev/malcontent",
                     "properties": {
