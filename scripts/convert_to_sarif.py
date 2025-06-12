@@ -40,7 +40,8 @@ def create_sarif_result(file_path, behavior, rule_id_prefix):
             }
         ],
         "properties": {
-            "tags": match_strings
+            "tags": match_strings,
+            "security-severity": map_risk_to_severity(risk_level)
         }
     }
 
