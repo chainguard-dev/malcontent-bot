@@ -16,8 +16,6 @@ Run static malware diff scans between two directories using [Malcontent](https:/
 
 ---
 
-## Usage
-
 ### Examples
 
 #### Nonblocking, Produce GitHub Markdown Summary
@@ -61,7 +59,9 @@ jobs:
 
 ---
 
-### 📥 Inputs
+### Usage
+
+#### Inputs
 
 | Name              | Required | Description                                                                                       | Default |
 |-------------------|----------|---------------------------------------------------------------------------------------------------|---------|
@@ -73,7 +73,7 @@ jobs:
 
 ---
 
-### 📤 Outputs
+#### Outputs
 
 | Name             | Description                                                                 |
 |------------------|-----------------------------------------------------------------------------|
@@ -84,7 +84,7 @@ These files are saved to the GitHub workspace and uploaded as artifacts.
 
 ---
 
-## 📎 Related
+### Related
 
 - [Malcontent GitHub repo](https://github.com/chainguard-dev/malcontent)
 - [YARA rule definitions](https://github.com/chainguard-dev/malcontent/tree/main/rules)
