@@ -5,8 +5,8 @@ import argparse
 def map_risk_to_level(risk):
     return {
         "CRITICAL": "error",
-        "HIGH": "error",
-        "MEDIUM": "warning",
+        "HIGH": "error",     # updated from "warning"
+        "MEDIUM": "warning", # updated from "note"
         "LOW": "note"
     }.get(risk.upper(), "note")
 
@@ -18,12 +18,6 @@ def map_risk_to_severity(risk):
         "MEDIUM": "5.0",
         "LOW": "3.0"
     }.get(risk.upper(), "3.0")
-
-def create_help_markdown(description, match_strings):
-    if not match_strings:
-        return f"**Detected Behavior:** {description}"
-    matches_md = "\n".join(f"- `{s}`" for s in match_strings)
-    return f"**Detected Behavior:** {description}\n\n**Matched Strings:**\n{matches_md}"
 
 def create_sarif_result(file_path, behavior, rule_id_prefix):
     description = behavior.get("Description", "No description provided")
@@ -91,10 +85,6 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
                     "id": rule_id,
                     "name": description,
                     "shortDescription": { "text": description },
-                    "fullDescription": { "text": f"Overall risk detected in file: {file_path}" },
-                    "help": {
-                        "text": description,
-                    },
                     "helpUri": "https://github.com/chainguard-dev/malcontent",
                     "properties": {
                         "tags": [],
@@ -135,12 +125,6 @@ def convert_malcontent_to_sarif(input_file, output_file, tool_name="malcontent",
                     "name": description,
                     "shortDescription": {
                         "text": description
-                    },
-                    "fullDescription": {
-                        "text": f"Behavior detected: {description}"
-                    },
-                    "help": {
-                        "text": description,
                     },
                     "helpUri": "https://github.com/chainguard-dev/malcontent",
                     "properties": {
