@@ -200,4 +200,5 @@ runs:
 
     - name: Print SARIF to console
       shell: bash
-      run: cat malcontent.sarif
+      run: jq . malcontent.sarif
+
