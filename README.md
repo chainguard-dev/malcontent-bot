@@ -38,6 +38,7 @@ jobs:
         with:
           sarif_file: ${{ steps.malcontent.outputs.diff-sarif }}
           category: malcontent
+```
 
 ---
 
