@@ -192,8 +192,8 @@ runs:
         esac
 
     - name: Convert Malcontent JSON to SARIF
-      run: |
       shell: bash
+      run: |
         python3 scripts/convert_to_sarif.py \
         --input "${{ steps.malcontentdiffjson.outputs.outfile }}" \
         --output "malcontent.sarif"
