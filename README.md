@@ -25,7 +25,7 @@ jobs:
   malware-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: chainguard-dev/malcontent-action@v1
+      - uses: chainguard-dev/malcontent-action@d3247e43f654c16ea49fcb5d11ff376f923e3035
         id: malcontent
         with:
           before-dir: ./before
